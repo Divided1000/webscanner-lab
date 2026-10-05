@@ -14,6 +14,7 @@ import sys
 
 from .core import Scanner
 from .checks import ALL_CHECKS
+from .config import DEFAULT_CONFIG
 
 
 SEV_ORDER = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3}
@@ -23,7 +24,11 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description="Minimal OWASP web vulnerability scanner (learning tool).")
     parser.add_argument("target", help="Base URL of the target you own/are authorized to test")
     parser.add_argument("--json", metavar="FILE", help="Also write findings to a JSON file")
+    parser.add_argument("--fail-on-findings", action="store_true",
+                        help="Exit non-zero if any findings are reported (useful in CI/DAST pipelines)")
     args = parser.parse_args(argv)
+
+    cfg = DEFAULT_CONFIG
 
     print(f"\n  web vulnerability scanner  ->  target: {args.target}")
     print("  " + "-" * 56)
@@ -37,7 +42,7 @@ def main(argv=None):
         return 2
 
     for check in ALL_CHECKS:
-        check(s)
+        check(s, cfg)
 
     findings = sorted(s.findings, key=lambda f: SEV_ORDER.get(f.severity, 9))
 
@@ -61,6 +66,9 @@ def main(argv=None):
                        "findings": [f.to_dict() for f in findings]}, fh, indent=2)
         print(f"  JSON report written to {args.json}\n")
 
+    # CI/DAST pipelines can gate a build on findings.
+    if args.fail_on_findings and findings:
+        return 1
     return 0
 
 

@@ -38,6 +38,7 @@ webscanner-lab/
 │   └── vulnerable_app.py   # deliberately-vulnerable Flask app (the safe target)
 ├── scanner/
 │   ├── core.py             # HTTP client + Finding model + report structure
+│   ├── config.py           # ScanConfig: endpoints/params (retarget without code edits)
 │   ├── checks.py           # the four vulnerability checks
 │   └── __main__.py         # CLI entry point
 ├── requirements.txt
@@ -57,7 +58,17 @@ python target/vulnerable_app.py          # http://127.0.0.1:8000
 
 # 2) Scan it (terminal 2)
 python -m scanner http://127.0.0.1:8000 --json report.json
+
+# CI/DAST mode: exit non-zero if anything is found (gate a pipeline build)
+python -m scanner http://127.0.0.1:8000 --fail-on-findings
 ```
+
+### Retargeting / configuration
+
+Endpoints and parameters live in `scanner/config.py` (`ScanConfig`), separate
+from the check logic — so the scanner can be pointed at a different app by
+editing config rather than code, the way real DAST tools are configured per
+target.
 
 ---
 
